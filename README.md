@@ -1,3 +1,3 @@
 # Bioinformatics2026
-
-Assignments for 2026 Bioinformatics
+# Bioinformatics2026
+# Bioinformatics2026
