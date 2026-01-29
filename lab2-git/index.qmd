@@ -48,7 +48,17 @@ When you accept the assignment, it will create a global private repository (only
 
 ### Cloning the repository
 
+<<<<<<< HEAD
 To clone the repository, you'll want to go to your global repository in GitHub, and click on the green code button.  Then, you can copy the HTTPS link (usually something like https://github.com/Stonehill-College-Bioinformatics/introduction-to-github-classroom-[YOURUSERNAME].git). In your Github Desktop page, you can then press add repository, clone repository, and enter that link.  Once you've done that, you're set up!
+=======
+To clone the repository, you'll need to copy the URL from the repository page.  You can do this by clicking the green "Code" button and copying the URL.  Then, in your terminal, you can run `git clone <URL>` to clone the repository to your local machine.
+
+```{bash, eval=FALSE, engine="sh"}
+git clone https://github.com/Stonehill-College-Bioinformatics/introduction-to-github-classroom-{GITHUB_USERNAME}.git # Note that this can be found on the repository page under the green "Code" button after github has created the repository
+cd introduction-to-github-classroom-{GITHUB_USERNAME}
+git checkout -b precept-1 # or what you want to call your branch
+```
+>>>>>>> c077350fb4b9cf47fa66c89617f31a2a8f4c44ac
 
 ### Working on the assignment in R
 
