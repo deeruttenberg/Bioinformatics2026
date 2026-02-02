@@ -1,0 +1,108 @@
+---
+title: "Lecture 4 Supplement"
+author: "Dee Ruttenberg"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+Last class, we learned 5 different statistical distributions used to model both discrete and continuous random variables (Uniform, Binomial, Normal, Poisson, Hypergeometric).  Here we will look at how to use each of them in R.  Click play a few times to get random variables for each:
+
+```{bash do this in console before you start, eval=FALSE}
+install.packages('BSDA')
+```
+
+```{r ex 1 distributions}
+runif(1, min=0, max=1)
+rbinom(1, size=10, p=0.3)
+rnorm(1, mean=100, sd=5)
+rpois(1, lambda=5)
+rhyper(1, 20000, 400, 100)
+```
+We can use each of these random distributions to calculate the probability of given test statistics.  The example given in class involves jury selection (which of the 5 distributions do we use?)
+
+```{r ex 2 binomial test}
+pbinom(4, 80, p=0.5)
+```
+
+The Normal Distribution will likely be the most used distribution in this case.  This is because *While most variables are NOT well defined by a normal curve, the sample means obtained from a random sample will eventually be well defined by a normal curve*, assuming a set of conditions are met.  This is the central limit theorem:
+
+```{r ex 3 central limit}
+# Generate a non-normally distributed population
+population <- runif(10000, min = 0, max = 1)
+
+# Create a histogram of the population
+hist(population, breaks = 20, probability = TRUE, main = "Histogram with Density Curve")
+
+# Set the sample size and number of samples
+sample_size <- 30
+num_samples <- 500
+
+# Draw random samples
+samples <- replicate(num_samples, sample(population, size = sample_size,replace = TRUE))
+
+# Calculate sample means
+sample_means <- colMeans(samples)
+x_bar <- mean(sample_means)
+std <- sd(sample_means)
+
+# Visualize the sample means
+hist(sample_means, breaks = 15, prob = TRUE, main = "Distribution of Sample Means",
+     xlab = "Sample Mean")
+
+# Distribution Curve
+curve(dnorm(x, mean = x_bar, sd = std), col = "Black", lwd = 2, add = TRUE)
+```
+
+This means a normal curve can be used to calculate the test statistic for any mean obtained via sampling (which is a lot of them!), relative to a null hypothesis mean:
+```{r ex 4 z-test}
+library(BSDA)
+x <- rnorm(30, mean=0.5, sd=1)
+z.test(x,sigma.x=1)
+```
+
+For statistical reasons, z-tests are rarely correct.  This is because it assumes the either the population variance is known, or the sample standard deviation is a good approximation of the population standard deviation (will give intuitive explanation to why in lecture).  For these reasons, we use a t-test:
+
+```{r ex 5 t-test}
+x <- rnorm(30, mean=99.9, sd=0.5)
+t.test(x,mu = 98.6, alternative = "greater")
+```
+t-tests are very flexible.  Can be paired when you've ensured both samples come from the same distribution (for instance, by looking at patients before and after treatment)
+```{r ex 6 paired t-test}
+x <- rnorm(30, mean=98.7, sd=0.5)
+y <- rnorm(30, mean=98.6, sd=0.5)
+t.test(x-y,mu = 0, alternative = "greater")
+```
+The statistics polling from two different distributions is different but the principles are the same. 
+
+```{r ex 6 two sample t-test}
+x <- rnorm(30, mean=98.7, sd=0.5)
+y <- rnorm(30, mean=98.6, sd=0.4)
+t.test(x, y, alternative = "greater", mu = 0, paired = FALSE, var.equal = FALSE)
+```
+Binomial tests rely on the same principle as in example 2.  One key distinction is because binomial distributions are discrete, you want to use pbinom instead of dbinom, as dbinom looks at the exact value, while pbinom looks at all values greater than that value:
+```{r ex 7 binomial}
+pbinom(8, size=100, prob=0.061)
+dbinom(8, size=100, prob=0.061) 
+```
+
+Poisson tests rely on the same principles, but with a focus on rates rather than one size one probability.
+
+```{r ex 8 poisson}
+ppois(20, lambda=8)
+```
+
+The test we will learn that uses a hypergeometric distribution (though there are many) is called a "Fishers Exact Test", and it specifically is a "venn diagram test", looking at whether the overlap of two variables is statistically odd (such as whether the overlap betwen athletes and smokers is uncommonly high or low):
+
+```{r ex 9 fishers exact}
+dat <- data.frame(
+  "smoke_no" = c(15, 2),
+  "smoke_yes" = c(1, 2),
+  row.names = c("Athlete", "Non-athlete"),
+  stringsAsFactors = FALSE
+)
+colnames(dat) <- c("Non-smoker", "Smoker")
+
+fisher.test(dat)
+
+
+```
