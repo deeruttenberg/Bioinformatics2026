@@ -1,0 +1,211 @@
+---
+title: "For Lecture 6"
+subtitle: "Playing with Multiple Hypothesis Testing"
+author: Dee Ruttenberg (Adapted from Roland Mcdonald)
+date: Feb 5, 2026
+output: html_document
+---
+  
+We will set things up as before, with the false positive rate $\alpha = 0.05$ and false negative rate $\beta=0.20$.
+
+```{r exercise 1}
+library(pwr)
+library(ggplot2)
+set.seed(1)
+
+mde <- 0.1  # minimum detectable effect
+cr_a <- 0.25 # the expected conversion rate for group A
+alpha <- 0.05 # the false positive rate
+power <- 0.80 # 1-false negative rate
+
+ptpt <- pwr.2p.test(h = ES.h(p1 = cr_a, p2 = (1+mde)*cr_a), 
+                    sig.level = alpha, 
+                    power = power
+)
+n_obs <- ceiling(ptpt$n)
+
+
+
+```
+
+To illustrate concepts in this article, we are going to use the same monte-carlo utility function that we used previously:
+
+```{r exercise 2}
+#
+# monte carlo runs n_simulations and calls the callback function each time with the ... optional args
+#
+monte_carlo <- function(n_simulations, callback, ...){
+  simulations <- 1:n_simulations
+  
+  sapply(1:n_simulations, function(x){
+    callback(...)
+  })
+}
+```
+
+As a refresher, we'll use the `monte_carlo` utility function to run 1000 experiments, measuring whether the p.value is less than alpha **after `n_obs` observations**.  If it is, we reject the null hypothesis.  We will set the effect size to 0: we know that there is no effect and that the null hypothesis is globally true.  In this case, we expect about 50 rejections and about 950 non-rejections, since 50/1000 would represent our expected maximum 5% false positive rate.
+
+```{r exercise 3}
+set.seed(1)
+
+# make our "true" effect zero: the null hypothesis is always true
+effect <- 0
+cr_b <- (1+effect)*cr_a
+observations <- 2*n_obs
+
+reject_at_i <- function(observations, i){
+  conversions_a <- rbinom(observations, 1, cr_a)
+  conversions_b <- rbinom(observations, 1, cr_b)
+  ( prop.test(c(sum(conversions_a[1:i]),sum(conversions_b[1:i])), c(i,i))$p.value ) < alpha
+}
+
+# run the sim
+rejected.H0 <- monte_carlo(1000, 
+                           callback=reject_at_i,
+                           observations=n_obs,
+                           i=n_obs
+                           )
+
+# output the rejection table
+table(rejected.H0)
+
+```
+
+In practice, we don't usually test the same thing 1000 times.  We test it once and state that there is a maximum 5% chance that we have falsely said there was an effect when there wasn't one
+
+## The Family-Wise Error Rate (FWER)
+Now imagine we test two separate statistics using the same source data with each test constrained by the same $\alpha$ and $\beta$ as before. What is the probability that we will detect *at least one* false positive considering the results of both tests?  This is known as the family-wise error rate (FWER[^3][^4]) and would apply to the case where a researcher claims there is a difference between the populations if any of the tests yields a positive result.  
+
+What is the FWER for the two tests?  To calculate the probability that *at least one* false positive will arise in our two-test example, consider that the probability that one test will not reject the null is $1-\alpha$.  Thus, the probability that both tests will not reject the null is $(1-\alpha)^2)$ and the probability that *at least one* test will reject the null is $1-(1-\alpha)^2$.  For $m$ tests, this generalizes to $1-(1-\alpha)^m$.  With $\alpha=0.05$ and $m=2$, we have:
+
+```{r exercise 4}
+m<-2
+1-(1-alpha)^m
+```
+
+Let's see if we can produce the same result with a monte carlo simulation.  We will run the monte carlo for `n_trials` and run `n_tests_per_trial`.  For each trial, if *at least one* of the `n_tests_per_trial` results in a rejection of the null, we consider that the trial rejects the null.  We should see that about 1 in 10 trials reject the null.  This is implemeted below:
+  
+```{r exercise 5}
+set.seed(1)
+n_tests_per_trial <- 2
+n_trials <- 1000
+rejects <- 0
+
+for(i in 1:n_trials){
+  # run the sim
+  rejected.H0 <- monte_carlo(n_tests_per_trial,
+                             callback=reject_at_i,
+                             observations=n_obs,
+                             i=n_obs
+  )
+  if(!is.na(table(rejected.H0)[2])) {
+    rejects <- rejects + 1
+  }
+}
+
+# Calculate FWER
+rejects/n_trials
+```
+
+Both results show that evaluating two tests on the same family of data will lead to a ~10% chance that a researcher will claim a "significant" result if they look for either test to reject the null.  Any claim there is a maximum 5% false positive rate would be mistaken.  As an exercise, verify that doing the same on $m=4$ tests will lead to an ~18% chance!
+  
+  A bad testing platform would be one that claims a maximum 5% false positive rate when any one of multiple tests on the same family of data show significance at the 5% level.  Clearly, if a researcher is going to claim that the FWER is no more than $\alpha$, then they must control for the FWER and carefully consider how individual tests reject the null.
+
+## Controlling the FWER
+
+There are many ways to control for the FWER, and the most conservative is the [Bonferroni correction](https://en.wikipedia.org/wiki/Bonferroni_correction).  The "Bonferroni method" will reject null hypotheses if $p_i \le \frac{\alpha}{m}$.  Let's switch our `reject_at_i` function for a `p_value_at_i` function, and then add in the Bonferroni correction:
+
+```{r exercise 6}
+set.seed(1)
+
+p_value_at_i <- function(observations, i){
+  conversions_a <- rbinom(observations, 1, cr_a)
+  conversions_b <- rbinom(observations, 1, cr_b)
+
+  prop.test(c(sum(conversions_a[1:i]),sum(conversions_b[1:i])), c(i,i))$p.value
+}
+
+n_tests_per_trial <- 2
+n_trials <- 1000
+rejects <- 0
+
+for(i in 1:n_trials){
+  # run n_tests_per_trial
+  p_values <- monte_carlo(n_tests_per_trial,
+                             callback=p_value_at_i,
+                             observations=n_obs,
+                             i=n_obs
+                             )
+  # Bonferroni-adjust the p-values and reject any cases with p-values <= alpha
+  rejects <- rejects + sum(any(p_values*n_tests_per_trial <= alpha))
+
+}
+
+# Calculate FWER
+rejects/n_trials
+```
+
+With the Bonferroni correction, we see that the realized false positive rate is back near the 5% level.  Note that we use `any(...)` to add 1 if any hypothesis is rejected.
+
+Up until now, we have only shown that the Bonferroni correction controls the FWER for the case that all null hypotheses are actually true: the effect is set to zero.  This is called controlling in the *weak sense*.  Next, let's use R's `p.adjust` function to illustrate the Bonferroni adjustments to the p-values:
+
+
+```{r exercise 7}
+set.seed(1)
+
+n_tests_per_trial <- 2
+n_trials <- 1000
+
+res_bf <- c()
+res_holm <- c()
+
+for(i in 1:n_trials){
+
+  # run n_tests_per_trial
+  p_values <- monte_carlo(n_tests_per_trial,
+                          callback=p_value_at_i,
+                          observations=n_obs,
+                          i=n_obs
+                          )
+  # Bonferroni: adjust the p-values and reject/accept
+  bf_reject <- p.adjust(p_values, "bonferroni") <= alpha
+  res_bf <- c(res_bf, sum(any(bf_reject)))
+
+}
+
+# Calculate FWER
+sum(res_bf)/length(res_bf)
+
+```
+
+However, this is incredibly restrictive.  If we are studying a genome (20000 genes), we will only ever be able to study the most massive effect sizes.  What if we are not concerned about controlling the probability of detecting at least one false positive, but something else?  We might be more interested in controlling the expected proportion of false discoveries amongst all discoveries, known as the false discovery rate.  As a quick preview, let's calculate the false discovery rate for our two cases:
+
+```{r exercise 8}
+table_holm
+table_bf
+fdr_holm <- table_holm['1','0']/sum(table_holm['1',])
+fdr_holm
+fdr_bf <- table_bf['1','0']/sum(table_bf['1',])
+fdr_bf
+```
+
+These are known as False Discovery Rate adjustments, and are focused on maintaining a specific ratio of false positives to true positives.  For this analysis, a visual analysis is preferable
+
+```{r exercise 9, echo = T, message = F, results = "hide", warning = F}
+install.packages("devtools")
+library("devtools")
+install_github("jdstorey/qvalue")
+```
+
+```{r exercise 10}
+library(qvalue)
+data(hedenfalk)
+pvalues <- hedenfalk$p
+qobj <- qvalue(p = pvalues)
+qvalues <- qobj$qvalues
+pi0 <- qobj$pi0
+lfdr <- qobj$lfdr
+summary(qobj)
+hist(qobj)
+plot(qobj)
+```
