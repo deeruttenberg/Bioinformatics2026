@@ -38,10 +38,10 @@ Let's try to illustrate this through a simulation.  We'll simulate two sequences
 
 ```{r exercise 2}
 library(ggplot2)
-set.seed(4)
+set.seed(23)
 
 # make our "true" effect equal to the mde
-effect <- mde
+effect <- 0
 cr_b <- (1+effect)*cr_a
 observations <- 2*n_obs
 

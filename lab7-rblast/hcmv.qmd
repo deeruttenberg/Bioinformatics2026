@@ -1,0 +1,45 @@
+---
+title: "BIO331 -- Lab 07: Bioinformatics and Working with Strings of Biological Data"
+subtitle: "Bioinformatics"
+author: Dee Ruttenberg
+date: Mar. 18, 2026
+output: html_document
+---
+
+Today we're going to apply our work on R to Bioinformatic data sets. As discussed in lecture, the typical output of a DNA sequencing experiment is a fastq file, consisting of often millions of configs which need to be stitched together (do you remember the two ways we do that?). Fastq files are different from fasta files as they contain quality scores -- this is useful to see how reliable your fastq data is.  The first tool we are going to use is Fastqc, to interpret the results of our fastq files.
+
+```{r}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("Rqc")
+```
+
+We will use a specific small dataset used specifically for teaching bioinformatics. Rqc will output an .html file (essentially a web page).  For this class, I will ask that you understand specifically the results of 'Average Quality', 'Cycle-Specific Average Quality', 'Cycle-specific Quality Distribution', and 'Cycle-Specific Base Call Proportion'.
+
+```{r}
+library(Rqc)
+folder <- system.file(package="ShortRead", "extdata/E-MTAB-1147")
+rqc(path = folder, pattern = ".fastq.gz")
+```
+
+Once we
+```{r}
+library(Biostrings)
+seqs <- readDNAStringSet("Full_cmv_259sequences_Aln.fasta")
+my_seq <- seqs["Europe_United Kingdom_GQ221974.1_Human_herpesvirus_5_strain_3157_complete_genome"]
+mat <- as.matrix(seqs)
+snp_positions <- which(apply(mat, 2, function(col) {
+  bases <- col[col %in% c("A","C","G","T")]
+  length(unique(bases)) > 1
+}))
+snp_matrix <- mat[, snp_positions]
+snp_list <- lapply(snp_positions, function(pos) {
+  data.frame(
+    Sequence = rownames(mat),
+    Position = pos,
+    Base = mat[, pos]
+  )
+})
+names(snp_list) <- paste0("Pos_", snp_positions)
+```
