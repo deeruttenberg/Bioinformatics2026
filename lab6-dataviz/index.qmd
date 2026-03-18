@@ -6,7 +6,71 @@ date: Mar. 4, 2026
 output: html_document
 ---
 
-## [GitHub Classroom Assignment](https://classroom.github.com/a/kCg_EfG5)
+Today we will be using ggplot2.  Ggplot2 allows us to directly make all sorts of data visualizations based on dataframes.  We will be using the same nycflights dataset we did last time:
+
+```{r}
+library(nycflights13) 
+flights = flights
+head(flights)
+```
+
+Ggplot has a slightly unintuitive syntax at first, but once you get a hang of it, you will be making flat-out gorgeous figures requiring way less work than excel. It works by first specifying columns in a ggplot to be your variables (called your primitives)
+
+```{r}
+delay <- ggplot(flights, aes(dep_delay))
+expectedtime <- ggplot(flights, aes(x = sched_arr_time, y = arr_time))
+```
+
+We can apply a geom function to the primitive to create all sorts of graphs!  Here are a few examples, but in your work you'll be making lots of other graphs.
+
+```{r}
+ggplot(flights, aes(dep_delay)) + geom_freqpoly()
+```
+
+```{r}
+delay + geom_histogram()
+```
+
+We can similarly, using these functions, specify aesthetics to change how the plot looks:
+
+```{r}
+delay + geom_histogram(bins=200, fill="red") 
+```
+
+If we have issues with the data (for instance, say we only want to look at flights delayed by less than an hour), we can also change the dataset itself. 
+
+```{r}
+library(dplyr)
+flights_delay = flights %>% filter(dep_delay <= 60)
+ggplot(flights_delay, aes(dep_delay)) + geom_histogram(bins=30) 
+```
+
+GGplot can also compare the relationships between two variables, whether continuous:
+```{r}
+expectedtime <- ggplot(flights, aes(x = sched_arr_time, y = arr_time))
+expectedtime + geom_point()
+```
+Or discrete and continuous
+```{r}
+arr_delay <- ggplot(flights_delay, aes(x = origin, y = arr_delay))
+arr_delay + geom_boxplot()
+```
+
+Finally, you can use the group function to compare variables across a specific axis (you can also use facets, which you'll need to learn to do yourself on the hw):
+
+```{r}
+expectedtime <- ggplot(flights, aes(x = sched_arr_time, y = arr_time))
+expectedtime + geom_point(aes(color=origin))
+```
+
+Ggplot, finally, is good at overlaying geoms in order to make more complex graphs:
+
+```{r}
+expectedtime <- ggplot(flights, aes(x = sched_arr_time, y = arr_time))
+expectedtime + geom_point() + geom_abline(color="green", aes(intercept = 0, slope = 1)) 
+```
+
+## Notes for Assignment
 - Check out the cheat sheet for ggplot2: [Data Visualization with ggplot2: CHEAT SHEET](https://rstudio.github.io/cheatsheets/html/data-visualization.html)
 - *Deadline is back to one week from the original precept date.*
 - *Please save each plot as an image (.png or .jpg) and upload them to your GitHub repository (4 images total).*
@@ -72,33 +136,5 @@ Initial Plot: A scatter plot illustrating the relationship between engine displa
 # R
 ggplot(data = mpg, aes(x = displ, y = hwy)) + 
   geom_point()
-```
-
-### Exercise 4: Enhanced Boxplots using after_stat() and patchwork
-
-- **Task:** 
-1. Modify plot1:
-   * Color the boxes based on median value of cty using a gradient from light blue (low mpg) to dark blue (high mpg).
-   * Add a title: "City MPG by Manufacturer".
-   * Rotate x-axis labels by 90 degrees and adjust their size for readability.
-   * Apply a theme of your choice from the ggthemes library
-
-2. Modify plot2:
-   * Color the boxes based on median value of hwy using a gradient from light green (low mpg) to dark green (high mpg).
-   * Add a title: "Highway MPG by Manufacturer".
-   * Rotate x-axis labels by 90 degrees and adjust their size for readability.
-   * Apply the same theme as plot1.
-
-3. Combine the two modified plots side by side using the patchwork library
-
-- **Expected Output:** A plot with the above specifications.
-
-```{r, fig.show='hide'}
-# R
-plot1 <- ggplot(data = mpg, aes(x = manufacturer, y = cty)) +
-  geom_boxplot()
-
-plot2 <- ggplot(data = mpg, aes(x = manufacturer, y = hwy)) +
-  geom_boxplot()
 ```
 

@@ -50,6 +50,7 @@ billboarddf[billboarddf$wk1 >= 80,]
 billboarddf$wk20 != NaN
 billboarddf[billboarddf$wk20 != NaN,]
 mean(billboarddf$wk3)
+billboarddf$sumwk1wk2 =  billboarddf$wk1 + billboarddf$wk2
 ```
 
 We're now going to discuss ways to transform entire data sets using R. 
@@ -94,7 +95,7 @@ billboard3
 
 Finally, the `arrange` function is applied to organize the dataset based on the `artist`, `track`, and `week` columns. This operation ensures a coherent and ordered display of the dataset, making it more manageable and intuitive for subsequent analysis.
 ```{r}
-long_billboard_sorted <- billboard3 %>% arrange(artist, track, week)
+long_billboard_sorted <- billboard3 %>% arrange(date, rank, artist, track)
 
 glimpse(long_billboard_sorted)
 ```
@@ -127,6 +128,8 @@ library(nycflights13)  # R has built-in datasets that can be loaded directly fro
 #### Inner Join
 In an inner join, only the rows with matching keys in both data frames are returned. Rows with non-matching keys are excluded from the result. It's useful when you want to join datasets based on common key columns, and you are only interested in rows with matching keys in both datasets.
 ```{r}
+flightsdf = flights
+weatherdf = weather
 # R example
 flights_weather_inner_joined <- inner_join(flights, weather,by=c("year", "month", "day", "hour", "origin"))
 ```
@@ -143,6 +146,8 @@ In a right join, all rows from the right dataset and the matched rows from the l
 ```{r}
 # R example
 flights_weather_right_joined <- right_join(flights, weather, by=c("year", "month", "day", "hour", "origin"))
+flights_weather_right_joined <- left_join(weather, flights, by=c("year", "month", "day", "hour", "origin"))
+
 ```
 
 #### Full Join
@@ -161,7 +166,11 @@ average_delay_per_condition <- flights_weather_inner_joined %>%
   group_by(precip > 0.5) %>%
   summarise(Average_Departure_Delay = mean(dep_delay, na.rm = TRUE))
 
-average_delay_per_condition
+average_delay_per_wind_condition <- flights_weather_inner_joined %>%
+  group_by(wind_dir) %>%
+  summarise(Average_Departure_Delay = mean(dep_delay, na.rm = TRUE))
+
+average_delay_per_wind_condition
 ```
 
 ## Exercises
