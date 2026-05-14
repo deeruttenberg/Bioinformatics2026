@@ -1,0 +1,41 @@
+---
+title: "PCA Analysis"
+author: "Dee Ruttenberg"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+This is an example from my own research, but it should be clear enough to show how to do it.  
+```{r setup}
+
+data = read.csv('bee_data.csv')
+# Define focal columns and prepare numerical data
+focal_columns <- c("Degree", "Close", "Eigen", "Between", "boutDegree", "boutBetween", "boutClose", "boutEigen", "bodyDegree", "bodyBetween", "bodyClose", "bodyEigen", "mean_vel", "move_perc", "N90.Day4", "Initiation.Freq", "clust")
+numerical_data <- data[, focal_columns]
+numerical_data <- numerical_data[complete.cases(numerical_data), ]
+data_normalized <- scale(numerical_data)
+
+# Perform PCA
+data.pca <- princomp(data_normalized)
+pve <- summary(data.pca)$sdev^2 / sum(summary(data.pca)$sdev^2)
+
+# Plot Scree
+fviz_eig(data.pca, addlabels = TRUE)
+
+# Plot PCA variables
+fviz_pca_var(data.pca, col.var = "black")
+
+# Ignore These Lines
+numerical_data$QR_Queen_Condition <- bds_means[complete.cases(numerical_data), ]$QR_Queen_Condition
+numerical_data$Trial <- bds_means[complete.cases(numerical_data), ]$Trial
+
+# Plot PCA individuals
+pca_ind_plot <- fviz_pca_ind(data.pca,
+                             label = "none", habillage = numerical_data$QR_Queen_Condition,
+                             addEllipses = TRUE, ellipse.level = 0.95, palette = "Dark2"
+) + theme_minimal() + labs(title = "Standardized PCA")
+
+# Get PCA scores and add to the data (This can let you make a plot yourself using tidyverse)
+pca_scores <- data.pca$scores
+data_with_pca <- data.frame(bds_means, PC1 = pca_scores[, 1], PC2 = pca_scores[, 2])
+```

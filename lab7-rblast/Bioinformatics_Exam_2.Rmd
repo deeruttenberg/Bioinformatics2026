@@ -1,0 +1,70 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Part III: Coding 
+  
+1. You are working on the following dataframe:
+
+```{r, include = FALSE}
+library(tidyverse)
+library(Biostrings)
+library(ape)
+library(dplyr)
+```
+
+```{r, eval=TRUE}
+student_df <- data.frame(
+  Name = c("Alice", "Bob", "Charlie", "Deborah", "Eliza", "Frank", "Gigi", "Henry"),
+  Major = c("Bio", "CompSci", "Neuro", "Bio", "Bio", "CompSci", "Neuro", "Bio"),
+  Minor = c(NA, NA, "Data Analytics", NA, "Chem", NA, "Bio", NA),
+  GPA = c(2.6, 3.4, 3.7, 3.8, 2.9, 3.0, 3.5, 2.6)
+)
+print(student_df)
+```
+
+(a) What should you get when you run `student_df$Name[8]`?
+
+(b) What would you expect the output of the following code to be?  You can describe it or make the output yourself.
+
+```{r, eval=FALSE}
+student_df %>%
+  filter(Minor != NA)
+```
+
+\newpage
+
+You wish to depict the average GPA for each student based on major:
+
+```{r, eval=TRUE}
+GPA_by_major <- ggplot(student_df, aes(x=Major, y = GPA))
+GPA_by_major + geom_boxplot(aes(color=Major)) 
+```
+
+(c) Circle the part of this code which makes the boxplots for Biology, Computer Science, and Neuroscience each a different color.
+
+(d) Let's say you changed the second line of code to `GPA_by_major + geom_boxplot(aes(color=Major)) + labs(y = "GPA at the End of Freshman year")`.  What effect would this have on the plot?
+
+\newpage
+
+2. Consider the following function, which takes an aligned fasta file, takes a subset of the nucleic acids, and makes a phylogeny of the fasta file:
+  
+```{r, eval=TRUE}
+phylogeny_from_fasta = function(input_fasta, start, end){
+  seqs <- readDNAStringSet(input_fasta)
+  if(length(seqs) > 10){
+    seqs = seqs[1:10]
+  }
+  sub_seqs <- subseq(seqs, start = start, end = end)
+  dist_matrix <- pwalign::stringDist(sub_seqs, method = "hamming") 
+  nj_tree <- nj(dist_matrix)
+  plot(nj_tree, main="Neighbor-Joining Tree") 
+}
+phylogeny_from_fasta("Full_cmv_259sequences_Aln.fasta", 30000, 31000)
+```
+
+(a) Circle the line of code that specifies the region of DNA for which to make a phylogeny (in the example, from nucleotides 30000 to 31000).
+
+(b) What is the purpose of lines 3-5 (`if(length(seqs) > 10){seqs = seqs[1:10]}`)?
+

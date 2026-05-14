@@ -98,9 +98,9 @@ lapply(packages, require, character.only = TRUE)
 
 Initial Plot: A simple bar plot displaying the number of cars for each class in the mpg dataset.
 ```{r, fig.show='hide'}
-# R
-ggplot(data = mpg, aes(x = class)) +
-  geom_bar()
+u = ggplot(data = mpg, aes(x = displ, y = hwy))  
+ u + geom_point(aes(color=class,shape=drv)) + labs(title="Engine Displacement vs. Highway MPG") + labs(x="Engine Size(liters)") + labs(y="Highway MPG") + geom_smooth(alpha=0.05) + facet_wrap(. ~ cyl,  nrow = 2)
+
 ```
 
 ### Exercise 2 -- Histogram Modification

@@ -1,0 +1,32 @@
+---
+title: "BIO331 -- Lab 08: Phylogenetics"
+subtitle: "Bioinformatics"
+author: Dee Ruttenberg
+date: Mar. 18, 2026
+output: html_document
+---
+
+The final project for this semester will be doing phylogenetics in R.  We will be using the same data set we used in the last lab.
+
+# Download Required Packages
+
+```{r}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("ape")
+
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("pegas")
+```
+
+```{r}
+library(ape)
+library(pegas)
+data(woodmouse)
+tajima.test(woodmouse)
+seqs <- readDNAStringSet("Full_cmv_259sequences_Aln.fasta")
+```
+
